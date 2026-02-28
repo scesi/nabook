@@ -2,8 +2,8 @@
 
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  ArrowLeft, BrainCircuit, CheckCircle2, 
+import {
+  ArrowLeft, BrainCircuit, CheckCircle2,
   XOctagon, Loader2, AlertTriangle, ShieldAlert
 } from "lucide-react";
 
@@ -27,11 +27,11 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
   const [exam, setExam] = useState<ExamData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
   const [isFinished, setIsFinished] = useState(false);
-  
+
   // Modal de advertencia para bloqueo de navegación
   const [showExitWarning, setShowExitWarning] = useState(false);
   const [pendingRoute, setPendingRoute] = useState<string | null>(null);
@@ -48,9 +48,10 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
     // 2. Fetch del examen RAG
     const generateExam = async () => {
+      let title = "Conceptos Generales";
       try {
-        const title = localStorage.getItem(`title_${id}`) || "Conceptos Generales";
-        
+        title = localStorage.getItem(`title_${id}`) || "Conceptos Generales";
+
         const res = await fetch("/api/generate-exam", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -67,9 +68,91 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
         console.warn("Usando fallback Mock porque la API falló (seguramente sin variables de entorno Azure).");
         // Mock data
         setTimeout(() => {
-          setExam({
-            examTitle: "Examen de Asimilación (Mock RAG)",
-            questions: [
+          let mockQuestions;
+          let examTitle = "Examen de Asimilación (Mock RAG)";
+
+          if (title.includes("Física") || id === "1") {
+            examTitle = "Examen: Física Cuántica Básica";
+            mockQuestions = [
+              {
+                id: "q1",
+                questionText: "¿Qué principio establece que es imposible conocer simultáneamente y con precisión absoluta la posición y el momento de una partícula?",
+                options: [
+                  "Relatividad General",
+                  "Principio de Incertidumbre de Heisenberg",
+                  "Dualidad Onda-Partícula",
+                  "Ley de Conservación de la Energía"
+                ],
+                correctOptionIndex: 1,
+                explanation: "El Principio de Incertidumbre de Heisenberg dicta que existe un límite fundamental a la precisión con la que se pueden conocer ciertos pares de propiedades físicas."
+              },
+              {
+                id: "q2",
+                questionText: "¿Qué ilustra principalmente el experimento mental del gato de Schrödinger?",
+                options: [
+                  "La crueldad animal en laboratorios químicos.",
+                  "La naturaleza determinista del universo.",
+                  "La superposición cuántica antes de realizar una medición.",
+                  "El funcionamiento de una máquina de vapor térmica."
+                ],
+                correctOptionIndex: 2,
+                explanation: "El experimento del gato de Schrödinger ilustra que el gato está en una superposición de estados (vivo y muerto simultáneamente) hasta que interviene un observador al abrir la caja o efectuar una medida."
+              },
+              {
+                id: "q3",
+                questionText: "¿Qué demostró el experimento de la doble rendija?",
+                options: [
+                  "Que la gravedad afecta el tiempo-espacio.",
+                  "Que el átomo tiene un núcleo denso y positivo.",
+                  "La radiación de fondo de microondas cósmico.",
+                  "La dualidad onda-partícula de la luz y la materia."
+                ],
+                correctOptionIndex: 3,
+                explanation: "El experimento de la doble rendija muestra que los electrones o fotones pueden formar un patrón de interferencia (ondas) pero impactar como partículas discretas."
+              }
+            ];
+          } else if (title.includes("Historia") || id === "2") {
+            examTitle = "Examen: Historia Moderna";
+            mockQuestions = [
+              {
+                id: "q1",
+                questionText: "¿Cuál fue una de las causas principales de la Revolución Francesa?",
+                options: [
+                  "El descubrimiento de América continental.",
+                  "La crisis financiera y la profunda desigualdad social.",
+                  "La invasión de fuerzas prusianas.",
+                  "El surgimiento repentino del Imperio Otomano."
+                ],
+                correctOptionIndex: 1,
+                explanation: "La desigualdad entre los tres estamentos y una grave crisis financiera precipitaron la caída de la monarquía absoluta en Francia."
+              },
+              {
+                id: "q2",
+                questionText: "¿Qué innovación técnica fue clave en la Revolución Industrial?",
+                options: [
+                  "El motor de combustión interna",
+                  "La máquina de vapor",
+                  "La imprenta de Gutenberg",
+                  "El avión de los hermanos Wright"
+                ],
+                correctOptionIndex: 1,
+                explanation: "La máquina de vapor, perfeccionada por James Watt, fue esencial para la mecanización de la industria y la minería."
+              },
+              {
+                id: "q3",
+                questionText: "¿Qué tratado reconoció formalmente la independencia de los Estados Unidos?",
+                options: [
+                  "El Tratado de Versalles",
+                  "El Tratado de Tordesillas",
+                  "El Tratado de París de 1783",
+                  "La Paz de Westfalia"
+                ],
+                correctOptionIndex: 2,
+                explanation: "El Tratado de París, firmado en 1783, supuso el reconocimiento formal de Estados Unidos por parte de Gran Bretaña después de su guerra de independencia."
+              }
+            ];
+          } else {
+            mockQuestions = [
               {
                 id: "q1",
                 questionText: "¿Cuál es el propósito principal de usar una base de datos vectorial en nuestra aplicación?",
@@ -94,7 +177,12 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
                 correctOptionIndex: 2,
                 explanation: "Centralizar los clientes SDK en lib/ o services/ permite mantener las APIs orientadas a lógica de negocio, aplicando Separation of Concerns."
               }
-            ]
+            ];
+          }
+
+          setExam({
+            examTitle: examTitle,
+            questions: mockQuestions
           });
           setLoading(false);
         }, 2000);
@@ -144,7 +232,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
     // Lógica para detectar puntos débiles basada en respuestas incorrectas
     const weakPoints: any[] = [];
-    
+
     exam.questions.forEach((q) => {
       const isCorrect = selectedAnswers[q.id] === q.correctOptionIndex;
       if (!isCorrect) {
@@ -195,13 +283,13 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
               Si sales del examen en este momento, todo tu progreso se eliminará y tendrás que empezar de cero o generar uno nuevo al volver a tus apuntes.
             </p>
             <div className="flex gap-3 w-full">
-              <button 
+              <button
                 onClick={() => setShowExitWarning(false)}
                 className="flex-1 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 Continuar examen
               </button>
-              <button 
+              <button
                 onClick={confirmExit}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm font-medium transition-colors"
               >
@@ -214,7 +302,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Header */}
       <header className="flex items-center justify-between px-6 py-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 sticky top-0 z-30">
-        <button 
+        <button
           onClick={() => attemptExit(`/editor/${id}`)}
           className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black dark:text-gray-400 dark:hover:text-white transition-colors"
         >
@@ -230,13 +318,13 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
       {/* Main Content */}
       <main className="flex-1 max-w-3xl w-full mx-auto p-6 sm:p-12 flex flex-col justify-center">
-        
+
         {!isFinished ? (
           <div className="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-8 sm:p-10 rounded-2xl shadow-sm relative overflow-hidden">
             {/* Progress indicator */}
             <div className="absolute top-0 left-0 h-1 bg-gray-100 dark:bg-zinc-800 w-full">
-              <div 
-                className="h-full bg-blue-600 transition-all duration-500 ease-out" 
+              <div
+                className="h-full bg-blue-600 transition-all duration-500 ease-out"
                 style={{ width: `${((currentQuestionIdx + 1) / exam.questions.length) * 100}%` }}
               ></div>
             </div>
@@ -254,15 +342,15 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             <div className="space-y-3">
               {currentQ.options.map((opt, idx) => {
                 const isSelected = selectedAnswers[currentQ.id] === idx;
-                
+
                 return (
                   <button
                     key={idx}
                     onClick={() => handleSelectOption(idx)}
                     className={`
                       w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-4
-                      ${isSelected 
-                        ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' 
+                      ${isSelected
+                        ? 'border-blue-600 bg-blue-50/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
                         : 'border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-900'
                       }
                     `}
@@ -296,7 +384,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
             </div>
             <h2 className="text-3xl font-semibold tracking-tight mb-4">Examen Completado</h2>
             <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-              La IA ha evaluado tus respuestas. Hemos guardado una lista de tus puntos débiles. 
+              La IA ha evaluado tus respuestas. Hemos guardado una lista de tus puntos débiles.
               Regresa a tus apuntes para ver los conceptos resaltados.
             </p>
             <button

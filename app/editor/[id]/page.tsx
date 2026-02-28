@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect, use } from "react";
 import Link from "next/link";
-import { 
-  ArrowLeft, BrainCircuit, UploadCloud, Save, 
+import {
+  ArrowLeft, BrainCircuit, UploadCloud, Save,
   MoreHorizontal, Image as ImageIcon, CheckCircle2, AlertCircle
 } from "lucide-react";
 
@@ -11,8 +11,8 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   // En Next.js 15+ "params" es una promesa
   const { id } = use(params);
 
-  const [title, setTitle] = useState("Sin Título");
-  const [markdown, setMarkdown] = useState("# Escribe tus apuntes aquí...\n\n");
+  const [title, setTitle] = useState("");
+  const [markdown, setMarkdown] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [weakPoints, setWeakPoints] = useState<any[]>([]);
@@ -21,6 +21,25 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     // Al cargar la página, verificamos si hay puntos débiles en LocalStorage 
     // generados por un examen anterior para esta sesión.
+
+    // Cargar contenido inicial
+    const storedMarkdown = localStorage.getItem(`markdown_${id}`);
+    const storedTitle = localStorage.getItem(`title_${id}`);
+
+    if (storedMarkdown && storedTitle) {
+      setMarkdown(storedMarkdown);
+      setTitle(storedTitle);
+    } else if (id === "1") {
+      setTitle("Física Cuántica B.");
+      setMarkdown("# Física Cuántica Básica\n\n## 1. Introducción\nLa física cuántica o mecánica cuántica es la rama de la física que estudia la naturaleza a escalas espaciales pequeñas, los sistemas atómicos y subatómicos y sus interacciones.\n\n## 2. Principios Fundamentales\n- **Dualidad onda-partícula:** La luz y la materia exhiben propiedades tanto de ondas como de partículas.\n- **Principio de incertidumbre de Heisenberg:** Es imposible conocer simultáneamente y con precisión absoluta ciertos pares de propiedades físicas, como la posición y el momento.\n- **Superposición cuántica:** Un sistema físico existe en todos sus estados teóricamente posibles simultáneamente hasta que es medido o comprobado.\n\n## 3. Experimento de la doble rendija\nDemuestra la dualidad onda-partícula. Cuando se disparan electrones a través de dos rendijas hacia una pantalla, forman un patrón de interferencia (comportamiento de onda). Sin embargo, si se observa por cuál rendija pasa el electrón, el patrón desaparece y actúan como partículas.\n\n## 4. El gato de Schrödinger\nUn experimento mental que ilustra la superposición cuántica. Un gato en una caja con veneno que se libera por un evento cuántico azaroso está, según la mecánica cuántica, simultáneamente vivo y muerto hasta que se abre la caja y se observa.");
+    } else if (id === "2") {
+      setTitle("Historia Moderna");
+      setMarkdown("# Historia Moderna\n\n## 1. La Revolución Francesa (1789-1799)\n- Fue un período de profundos cambios sociales y políticos en Francia.\n- **Causas:** Desigualdad social (tres estamentos), crisis financiera, influencia de las ideas de la Ilustración.\n- **Eventos clave:** Toma de la Bastilla (14 de julio 1789), Declaración de los Derechos del Hombre y del Ciudadano, el Reinado del Terror liderado por Robespierre.\n- **Consecuencias:** Fin de la monarquía absoluta, ascenso de Napoleón Bonaparte.\n\n## 2. La Revolución Industrial\n- Transición hacia nuevos procesos de fabricación que comenzó en Gran Bretaña alrededor de 1760.\n- **Innovaciones principales:** Máquina de vapor (James Watt), mecanización de la industria textil, uso del carbón y hierro.\n- **Impacto social:** Urbanización masiva, surgimiento de la clase obrera y burguesía industrial, cambios en las condiciones laborales.\n\n## 3. Independencia de Estados Unidos (1776)\n- Las trece colonias británicas en Norteamérica declaran su independencia.\n- Tratado de París de 1783 reconoce formalmente la independencia.\n- Establece la primera república basada en principios ilustrados y una constitución escrita.");
+    } else {
+      setTitle("Sin Título");
+      setMarkdown("# Escribe tus apuntes aquí...\n\n");
+    }
+
     const storedPoints = localStorage.getItem(`weakPoints_${id}`);
     if (storedPoints) {
       try {
@@ -49,7 +68,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
       });
 
       const data = await res.json();
-      
+
       if (res.ok) {
         // Añadimos el texto extraído al final del markdown
         const newText = `\n\n> **Texto extraído de ${file.name}**\n${data.data.preview}`;
@@ -75,7 +94,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   };
 
   const getHighlightColor = (criticality: string) => {
-    switch(criticality) {
+    switch (criticality) {
       case "HIGH": return "bg-red-500/20 border-red-500/50 text-red-700 dark:text-red-400";
       case "MEDIUM": return "bg-yellow-500/20 border-yellow-500/50 text-yellow-700 dark:text-yellow-400";
       case "LOW": return "bg-blue-500/20 border-blue-500/50 text-blue-700 dark:text-blue-400";
@@ -92,7 +111,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex flex-col">
-            <input 
+            <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="font-medium bg-transparent border-none outline-none text-sm placeholder:text-gray-300"
@@ -108,8 +127,8 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
           <button className="text-gray-500 hover:text-black dark:hover:text-white p-2">
             <MoreHorizontal className="w-4 h-4" />
           </button>
-          
-          <Link 
+
+          <Link
             href={`/exam/${id}`}
             onClick={() => {
               // Guardar el contexto actual de markdown para RAG local
@@ -127,7 +146,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
 
       <div className="flex-1 max-w-4xl w-full mx-auto p-6 sm:p-12 flex flex-col gap-8">
         {/* Upload Zone */}
-        <div 
+        <div
           onClick={() => fileInputRef.current?.click()}
           className={`
             border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300
@@ -135,14 +154,14 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
             ${uploadSuccess ? 'border-green-400 bg-green-50 dark:bg-green-950/20' : ''}
           `}
         >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
             accept="image/*,application/pdf"
             onChange={handleFileUpload}
           />
-          
+
           {isUploading ? (
             <div className="animate-pulse flex flex-col items-center">
               <UploadCloud className="w-8 h-8 text-blue-500 mb-3 animate-bounce" />
