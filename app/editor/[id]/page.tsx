@@ -48,26 +48,20 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
         body: formData,
       });
 
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Error al procesar el documento.");
+      }
+
       const data = await res.json();
       
-      if (res.ok) {
-        // Añadimos el texto extraído al final del markdown
-        const newText = `\n\n> **Texto extraído de ${file.name}**\n${data.data.preview}`;
-        setMarkdown(prev => prev + newText);
-        setUploadSuccess(true);
-      } else {
-        // MOCK fallback for UI demonstration since real Azure keys might be missing
-        console.warn("API falló (seguramente por falta de llaves). Usando Mock Data.");
-        setTimeout(() => {
-          const mockOcrText = `\n\n> **Apuntes extraídos de ${file.name} (OCR Mock)**\n\nLa fotosíntesis es el proceso metabólico por el que las plantas verdes convierten energía luminosa en energía química...`;
-          setMarkdown(prev => prev + mockOcrText);
-          setUploadSuccess(true);
-          setIsUploading(false);
-        }, 1500);
-        return;
-      }
-    } catch (error) {
-      console.error(error);
+      // Añadimos el texto extraído al final del markdown
+      const newText = `\n\n> **Texto extraído de ${file.name}**\n${data.data.preview}`;
+      setMarkdown(prev => prev + newText);
+      setUploadSuccess(true);
+    } catch (error: any) {
+      console.error("Error en process-document:", error);
+      alert(error.message || "Error al procesar el documento.");
     } finally {
       setIsUploading(false);
       setTimeout(() => setUploadSuccess(false), 3000);

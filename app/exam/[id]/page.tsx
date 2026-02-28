@@ -50,54 +50,29 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     const generateExam = async () => {
       try {
         const title = localStorage.getItem(`title_${id}`) || "Conceptos Generales";
+        const content = localStorage.getItem(`markdown_${id}`) || "";
         
         const res = await fetch("/api/generate-exam", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: title })
+          body: JSON.stringify({ topic: title, content })
         });
 
         if (!res.ok) {
-          throw new Error("Si no tienes configurado Azure OpenAI real, esto fallará. Se usará mock.");
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.error || "Error al conectarse a la API de generación de exámenes.");
         }
 
         const data = await res.json();
+        if (!data.exam) {
+          throw new Error("La API no devolvió un formato de examen válido.");
+        }
         setExam(data.exam);
-      } catch (err) {
-        console.warn("Usando fallback Mock porque la API falló (seguramente sin variables de entorno Azure).");
-        // Mock data
-        setTimeout(() => {
-          setExam({
-            examTitle: "Examen de Asimilación (Mock RAG)",
-            questions: [
-              {
-                id: "q1",
-                questionText: "¿Cuál es el propósito principal de usar una base de datos vectorial en nuestra aplicación?",
-                options: [
-                  "Guardar los perfiles de usuario",
-                  "Permitir la búsqueda semántica y contextual (RAG)",
-                  "Reemplazar la base de datos relacional por completo",
-                  "Aumentar la velocidad de compilación"
-                ],
-                correctOptionIndex: 1,
-                explanation: "Las BBDD vectoriales permiten buscar fragmentos de texto por similitud de significado (embeddings), vital para que GPT tenga contexto."
-              },
-              {
-                id: "q2",
-                questionText: "En el contexto de Next.js App Router, ¿dónde se deben configurar las llamadas a clientes pesados (ej. Azure SDKs) para Clean Code?",
-                options: [
-                  "Directamente en los componentes de Cliente",
-                  "En route.ts en cada request",
-                  "Instanciados como Singleton en una carpeta compartida como lib/ o services/",
-                  "Únicamente en Vercel"
-                ],
-                correctOptionIndex: 2,
-                explanation: "Centralizar los clientes SDK en lib/ o services/ permite mantener las APIs orientadas a lógica de negocio, aplicando Separation of Concerns."
-              }
-            ]
-          });
-          setLoading(false);
-        }, 2000);
+      } catch (err: any) {
+        console.error("Error al generar examen:", err);
+        setError(err.message || "Error desconocido");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -160,6 +135,22 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
     // Guardar en localStorage para que el Editor los resalte
     localStorage.setItem(`weakPoints_${id}`, JSON.stringify(weakPoints));
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-black flex flex-col items-center justify-center text-gray-900 dark:text-gray-100 font-sans p-6 text-center">
+        <XOctagon className="w-12 h-12 mb-4 text-red-500" />
+        <h2 className="text-xl font-medium tracking-tight mb-2">Error al generar examen</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-md">{error}</p>
+        <button
+          onClick={() => router.push(`/editor/${id}`)}
+          className="bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+        >
+          Volver a apuntes
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
