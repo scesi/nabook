@@ -55,7 +55,7 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
         const res = await fetch("/api/generate-exam", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ topic: title, content })
+          body: JSON.stringify({ id, topic: title, content })
         });
 
         if (!res.ok) {
@@ -169,10 +169,39 @@ export default function ExamPage({ params }: { params: Promise<{ id: string }> }
 
   if (!exam) return null;
 
-  const currentQ = exam.questions[currentQuestionIdx];
-  const hasSelectedCurrent = selectedAnswers[currentQ.id] !== undefined;
+// 1. Si no hay examen o no hay preguntas, mostramos estado de error/vacío
+  if (!exam || !exam.questions || !Array.isArray(exam.questions) || exam.questions.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
+        <AlertTriangle className="w-12 h-12 text-amber-500 mb-4" />
+        <h2 className="text-xl font-bold">Examen sin contenido</h2>
+        <p className="text-gray-500 max-w-sm mb-6">
+          No hay preguntas disponibles. Asegúrate de guardar tus apuntes en el editor antes de generar la evaluación.
+        </p>
+        <button 
+          onClick={() => router.push(`/editor/${id}`)}
+          className="bg-black dark:bg-white text-white dark:text-black px-6 py-2 rounded-lg font-medium"
+        >
+          Volver al Editor
+        </button>
+      </div>
+    );
+  }
 
-  return (
+  // 2. Extraemos la pregunta actual de forma segura
+  const currentQ = exam.questions[currentQuestionIdx];
+
+  // 3. Si por un cambio de estado la pregunta actual no existe, evitamos el crash
+  if (!currentQ || !Array.isArray(currentQ.options)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+      </div>
+    );
+  }
+
+  const hasSelectedCurrent = selectedAnswers[currentQ.id] !== undefined;
+return (
     <div className="min-h-screen bg-[#FAFAFA] dark:bg-black text-gray-900 dark:text-gray-100 font-sans flex flex-col">
       {/* Warning Modal */}
       {showExitWarning && (

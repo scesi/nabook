@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 // Importamos ensureSearchIndex desde tu archivo de configuración
 import { openaiClient, searchClient, ensureSearchIndex } from "@/lib/azure-config";
+import { ingestDocument } from "@/lib/ingest";
 
 export async function POST(req: Request) {
   try {
-    const { topic } = await req.json();
+    const { id, topic, content } = await req.json();
     console.log(`[GenerateExam] Iniciando. Topic: "${topic || 'Ninguno'}".`);
 
     if (!topic) {
@@ -16,6 +17,14 @@ export async function POST(req: Request) {
     // =========================================================
     // Esto recreará el índice que borraste con la nueva config de searchable/retrievable
     await ensureSearchIndex();
+
+    if (id && content) {
+      console.log(`[GenerateExam] Ingestando documento id: ${id}`);
+      await ingestDocument(id, content);
+      
+      // Pequeña pausa para asegurar la indexación en Azure Search antes de la búsqueda (por si hay eventual consistencia)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+    }
 
     // =========================================================
     // 1. Vectorizar el tópico
