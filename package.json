@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.9.1",
+    "@azure/openai": "^2.0.0",
+    "@azure/search-documents": "^12.2.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"
